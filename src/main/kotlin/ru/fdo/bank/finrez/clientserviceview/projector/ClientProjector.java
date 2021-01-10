@@ -1,18 +1,31 @@
 package ru.fdo.bank.finrez.clientserviceview.projector;
 
+import lombok.extern.slf4j.Slf4j;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fdo.bank.finrez.clientservicecommon.coreapi.event.ClientCorpCreatedEvent;
 import ru.fdo.bank.finrez.clientservicecommon.coreapi.event.ClientCorpUpdatedEvent;
+import ru.fdo.bank.finrez.clientservicecommon.coreapi.event.ClientIndividualCreatedEvent;
+import ru.fdo.bank.finrez.clientservicecommon.coreapi.event.ClientIndividualUpdatedEvent;
+import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindAllClientQuery;
+import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindAllCorpClientQuery;
+import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindAllIndividualClientQuery;
 import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindClientByIdQuery;
+import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindClientByParamsQuery;
 import ru.fdo.bank.finrez.clientserviceview.domain.Client;
 import ru.fdo.bank.finrez.clientserviceview.domain.ClientCorp;
+import ru.fdo.bank.finrez.clientserviceview.domain.ClientIndividual;
 import ru.fdo.bank.finrez.clientserviceview.domain.TypeOfClient;
 import ru.fdo.bank.finrez.clientserviceview.repository.ClientRepository;
 
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
+@Slf4j
 @Component
 public class ClientProjector {
 
@@ -25,6 +38,7 @@ public class ClientProjector {
     @Transactional
     @EventHandler
     public void on(ClientCorpCreatedEvent event){
+        log.debug("triggered ClientCorpCreatedEvent: {}", event);
         saveClientCorp(event.getName(),
                 event.getOrgForm(),
                 event.getAbbreviatedName(),
@@ -42,6 +56,7 @@ public class ClientProjector {
     @Transactional
     @EventHandler
     public void on(ClientCorpUpdatedEvent event){
+        log.debug("triggered ClientCorpUpdatedEvent: {}", event);
         saveClientCorp(event.getName(),
                 event.getOrgForm(),
                 event.getAbbreviatedName(),
@@ -54,6 +69,32 @@ public class ClientProjector {
                 event.getAddressF(),
                 event.getEmail(),
                 event.getClientId());
+    }
+
+    @Transactional
+    @EventHandler
+    public void on(ClientIndividualCreatedEvent event){
+        log.debug("triggered ClientIndividualCreatedEvent: {}", event);
+        saveClientIndividual(event.getClientId(),
+                event.getLastName(),
+                event.getFirstName(),
+                event.getMiddleName(),
+                event.getCitizenship(),
+                event.getBirthday(),
+                event.getPassport());
+    }
+
+    @Transactional
+    @EventHandler
+    public void on(ClientIndividualUpdatedEvent event){
+        log.debug("triggered ClientIndividualUpdatedEvent: {}", event);
+        saveClientIndividual(event.getClientId(),
+                event.getLastName(),
+                event.getFirstName(),
+                event.getMiddleName(),
+                event.getCitizenship(),
+                event.getBirthday(),
+                event.getPassport());
     }
 
     @Transactional
@@ -84,8 +125,52 @@ public class ClientProjector {
         clientRepository.save(client);
     }
 
+    @Transactional
+    public void saveClientIndividual(String clientId,
+                                     String lastName,
+                                     String firstName,
+                                     String middleName,
+                                     String citizenship,
+                                     LocalDate birthday,
+                                     String passport) {
+        final ClientIndividual clientIndividual = new ClientIndividual(lastName,
+                firstName,
+                middleName,
+                citizenship,
+                birthday,
+                passport);
+        final Client client = new Client(clientId, TypeOfClient.INDIVIDUAL, null, clientIndividual);
+        clientRepository.save(client);
+    }
+
     @QueryHandler
     public Client handle(FindClientByIdQuery query){
+        log.debug("triggered FindClientByIdQuery: {}", query);
         return clientRepository.findById(query.getClientId()).orElse(null);
+    }
+
+    @QueryHandler
+    public List<Client> handle(FindAllClientQuery query){
+        log.debug("triggered FindAllClientQuery: {}", query);
+        return clientRepository.findAll(PageRequest.of(query.getPage(), query.getSize())).getContent();
+    }
+
+    @QueryHandler
+    public List<Client> handle(FindAllCorpClientQuery query){
+        log.debug("triggered FindAllCorpClientQuery: {}", query);
+        return clientRepository.findAllByTypeOfClient(TypeOfClient.CORP, PageRequest.of(query.getPage(), query.getSize())).getContent();
+    }
+
+    @QueryHandler
+    public List<Client> handle(FindAllIndividualClientQuery query){
+        log.debug("triggered FindAllIndividualClientQuery: {}", query);
+        return clientRepository.findAllByTypeOfClient(TypeOfClient.INDIVIDUAL, PageRequest.of(query.getPage(), query.getSize())).getContent();
+    }
+
+    @QueryHandler
+    public List<Client> handle(FindClientByParamsQuery query){
+        log.debug("triggered FindClientByParamsQuery: {}", query);
+        //TODO add search
+        return Collections.emptyList();
     }
 }
