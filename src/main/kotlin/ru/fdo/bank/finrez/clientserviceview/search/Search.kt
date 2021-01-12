@@ -2,7 +2,6 @@ package ru.fdo.bank.finrez.clientserviceview.search
 
 import org.springframework.data.jpa.domain.Specification
 import ru.fdo.bank.finrez.clientserviceview.search.impl.SpecificationBuilderImpl
-import java.lang.reflect.Method
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -25,7 +24,7 @@ class Search<T>(clazz: Class<T>) {
                     val searchCriteria = SearchCriteria(key, operation, value, isPredicate)
                     builder.withCriteria(searchCriteria)
 
-                }else if (field.type == Enum::class.java){
+                }else if (field.type.superclass == Enum::class.java){
                     val enumClass = field.type
                     val methodValueOf = enumClass.getMethod("valueOf", String::class.java)
                     val value = methodValueOf.invoke(enumClass, searchParam[key])
@@ -59,7 +58,7 @@ class Search<T>(clazz: Class<T>) {
                     val searchCriteria = SearchCriteriaNestedAttribute(nestedAttribute, key, operation, value, isPredicate)
                     builder.withNestedAttributeCriteria(searchCriteria)
 
-                }else if (field.type == Enum::class.java){
+                }else if (field.type.superclass == Enum::class.java){
                     val enumClass = field.type
                     val methodValueOf = enumClass.getMethod("valueOf", String::class.java)
                     val value = methodValueOf.invoke(enumClass, searchParam[key])
