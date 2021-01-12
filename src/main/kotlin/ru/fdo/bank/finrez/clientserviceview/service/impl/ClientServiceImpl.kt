@@ -4,6 +4,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindAllClientQuery
 import ru.fdo.bank.finrez.clientservicecommon.coreapi.query.FindAllCorpClientQuery
@@ -38,8 +39,8 @@ class ClientServiceImpl(private val queryGateway: QueryGateway) : ClientService{
             queryGateway.query(FindAllIndividualClientQuery(size, page), ResponseTypes.multipleInstancesOf(Client::class.java))
     }
 
-    override fun getClientsByParams(searchParameters: Map<String, String>): CompletableFuture<List<Client>> {
+    override fun getClientsByParams(searchParameters: Map<String, String>,pageable: Pageable): CompletableFuture<List<Client>> {
         logger.debug("triggered getClientsByParams: searchParameters=$searchParameters")
-        return queryGateway.query(FindClientByParamsQuery(searchParameters), ResponseTypes.multipleInstancesOf(Client::class.java))
+        return queryGateway.query(FindClientByParamsQuery(searchParameters, pageable), ResponseTypes.multipleInstancesOf(Client::class.java))
     }
 }

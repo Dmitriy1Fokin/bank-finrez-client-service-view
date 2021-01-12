@@ -5,7 +5,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -177,8 +176,6 @@ public class ClientProjector {
         log.debug("triggered FindClientByParamsQuery: {}", query);
 
         final String SEARCH_PARAM_TYPE_OF_CLIENT = "typeOfClient";
-        final String SEARCH_PARAM_PAGE = "page";
-        final String SEARCH_PARAM_SIZE = "size";
         final Map<String, String> searchParam = query.getSearchParameters();
 
         Search<Client> clientSearch = new Search<>(Client.class);
@@ -197,21 +194,6 @@ public class ClientProjector {
 
         Specification<Client> specification = clientSearch.getSpecification();
 
-        final int page;
-        if(StringUtils.isEmpty(searchParam.get(SEARCH_PARAM_PAGE))){
-            page = 0;
-        }else {
-            page = Integer.parseInt(searchParam.get(SEARCH_PARAM_PAGE));
-        }
-
-        final int size;
-        if(StringUtils.isEmpty(searchParam.get(SEARCH_PARAM_SIZE))){
-            size = 10;
-        }else {
-            size = Integer.parseInt(searchParam.get(SEARCH_PARAM_SIZE));
-        }
-        Pageable pageable = PageRequest.of(page, size);
-
-        return clientRepository.findAll(specification, pageable).getContent();
+        return clientRepository.findAll(specification, query.getPageable()).getContent();
     }
 }

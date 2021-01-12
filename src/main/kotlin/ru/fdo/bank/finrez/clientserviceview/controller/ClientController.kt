@@ -1,5 +1,6 @@
 package ru.fdo.bank.finrez.clientserviceview.controller
 
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -30,7 +31,7 @@ class ClientController(private val clientService: ClientService){
             clientService.getAllClientsByType(typeOfClient, page, size)
 
     @GetMapping("/search")
-    fun getClientsByParams(@RequestParam searchParams: Map<String, String>) : CompletableFuture<List<Client>> =
-            clientService.getClientsByParams(searchParams)
+    fun getClientsByParams(@RequestParam searchParams: Map<String, String>, pageable: Pageable) : CompletableFuture<List<Client>> =
+            clientService.getClientsByParams(searchParams, pageable)
 
 }
