@@ -1,9 +1,12 @@
 package ru.fdo.bank.finrez.clientserviceview.projector;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fdo.bank.finrez.clientservicecommon.coreapi.event.ClientCorpCreatedEvent;
@@ -20,10 +23,12 @@ import ru.fdo.bank.finrez.clientserviceview.domain.ClientCorp;
 import ru.fdo.bank.finrez.clientserviceview.domain.ClientIndividual;
 import ru.fdo.bank.finrez.clientserviceview.domain.TypeOfClient;
 import ru.fdo.bank.finrez.clientserviceview.repository.ClientRepository;
+import ru.fdo.bank.finrez.clientserviceview.search.Search;
 
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -168,9 +173,45 @@ public class ClientProjector {
     }
 
     @QueryHandler
-    public List<Client> handle(FindClientByParamsQuery query){
+    public List<Client> handle(FindClientByParamsQuery query) throws ReflectiveOperationException {
         log.debug("triggered FindClientByParamsQuery: {}", query);
-        //TODO add search
-        return Collections.emptyList();
+
+        final String SEARCH_PARAM_TYPE_OF_CLIENT = "typeOfClient";
+        final String SEARCH_PARAM_PAGE = "page";
+        final String SEARCH_PARAM_SIZE = "size";
+        final Map<String, String> searchParam = query.getSearchParameters();
+
+        Search<Client> clientSearch = new Search<>(Client.class);
+
+        clientSearch.withParam(searchParam);
+
+        if(!StringUtils.isEmpty(searchParam.get(SEARCH_PARAM_TYPE_OF_CLIENT))){
+            if(searchParam.get(SEARCH_PARAM_TYPE_OF_CLIENT).equals(TypeOfClient.CORP.name())){
+                clientSearch.withNestedAttributeParam(searchParam, "clientCorp");
+            }else if(searchParam.get(SEARCH_PARAM_TYPE_OF_CLIENT).equals(TypeOfClient.INDIVIDUAL.name())){
+                clientSearch.withNestedAttributeParam(searchParam, "clientIndividual");
+            }
+        }else {
+            return Collections.emptyList();
+        }
+
+        Specification<Client> specification = clientSearch.getSpecification();
+
+        final int page;
+        if(StringUtils.isEmpty(searchParam.get(SEARCH_PARAM_PAGE))){
+            page = 0;
+        }else {
+            page = Integer.parseInt(searchParam.get(SEARCH_PARAM_PAGE));
+        }
+
+        final int size;
+        if(StringUtils.isEmpty(searchParam.get(SEARCH_PARAM_SIZE))){
+            size = 10;
+        }else {
+            size = Integer.parseInt(searchParam.get(SEARCH_PARAM_SIZE));
+        }
+        Pageable pageable = PageRequest.of(page, size);
+
+        return clientRepository.findAll(specification, pageable).getContent();
     }
 }
