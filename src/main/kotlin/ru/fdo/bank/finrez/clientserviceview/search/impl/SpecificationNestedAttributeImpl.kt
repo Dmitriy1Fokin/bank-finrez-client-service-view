@@ -44,7 +44,7 @@ class SpecificationNestedAttributeImpl<T, N>(private val criteria: SearchCriteri
         }
         if(criteria.operation == Operations.EQUAL_IGNORE_CASE){
             return when(criteria.value::class){
-                String::class -> criteriaBuilder.like(criteriaBuilder.lower(join.get(criteria.key)), "%${criteria.value}%")
+                String::class -> criteriaBuilder.like(criteriaBuilder.lower(join.get(criteria.key)), "%${criteria.value.toString().toLowerCase()}%")
                 else -> criteriaBuilder.equal(join.get<Any>(criteria.key), criteria.value)
             }
         }

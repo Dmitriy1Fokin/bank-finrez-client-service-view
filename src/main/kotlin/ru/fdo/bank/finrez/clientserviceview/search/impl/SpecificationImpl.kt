@@ -42,7 +42,7 @@ class SpecificationImpl<T>(private val criteria: SearchCriteria) : Specification
         }
         if(criteria.operation == Operations.EQUAL_IGNORE_CASE){
             return when(criteria.value::class){
-                String::class -> criteriaBuilder.like(criteriaBuilder.lower(root.get(criteria.key)), "%${criteria.value}%")
+                String::class -> criteriaBuilder.like(criteriaBuilder.lower(root.get(criteria.key)), "%${criteria.value.toString().toLowerCase()}%")
                 else -> criteriaBuilder.equal(root.get<Any>(criteria.key), criteria.value)
             }
         }
